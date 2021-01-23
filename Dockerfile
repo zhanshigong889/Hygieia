@@ -1,11 +1,17 @@
-FROM docker.io/nginx:latest
+FROM openjdk:8-jre
 
-COPY default.conf /etc/nginx/conf.d/default.conf.templ
-COPY conf-builder.sh /usr/bin/conf-builder.sh
-COPY html /usr/share/nginx/html
-RUN chown nginx:nginx /usr/share/nginx/html
+VOLUME ["/hygieia/logs"]
 
-EXPOSE 80 443
+RUN mkdir /hygieia/config
 
-CMD conf-builder.sh &&\
-  nginx -g "daemon off;"
+EXPOSE 8080
+
+ENV PROP_FILE /hygieia/config/application.properties
+
+WORKDIR /hygieia
+
+COPY target/*.jar /hygieia/
+COPY docker/properties-builder.sh /hygieia/
+
+CMD ./properties-builder.sh &&\
+  java -Djava.security.egd=file:/dev/./urandom -jar *.jar --spring.config.location=$PROP_FILE
